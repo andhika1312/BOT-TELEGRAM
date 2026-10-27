@@ -14,7 +14,7 @@
 | WEBHOOK_SECRET | string acak bebas (huruf/angka) |
 | FIREBASE_SERVICE_ACCOUNT | seluruh isi file JSON (1 baris) |
 | ADMIN_PASSWORD | password login dashboard |
-| ANTHROPIC_API_KEY | (opsional) agar balasan bot lebih natural |
+| ANTHROPIC_API_KEY | (tidak dipakai lagi, bot hanya membalas "hi") |
 
 ## 3. Pasang webhook (ganti nilai)
 ```
@@ -35,6 +35,7 @@ Setelah chat berakhir (skip/stop/di-skip) user melihat penilaian 👍😐👎 + 
 Dashboard → Broadcast: tulis pengumuman, kirim ke semua user (kecuali yang diblokir). Berjalan di background (±25 pesan/detik), progres tampil di dashboard. User yang memblokir bot dihitung 'gagal'.
 
 ## Fitur
+- Pencocokan acak: semua gender bisa bertemu, selisih umur maksimal 10 tahun.
 - User: /start (gender, umur 18+, minat), /search, Skip, Next, Stop, /profil (ubah gender, umur, minat tanpa mengulang dari awal).
 - Tidak ada pasangan cocok dalam ±6 detik → tampil "Pasangan ditemukan" (teman ngobrol otomatis), dilewati otomatis ±10 detik.
 - Foto diteruskan ke bot admin + tombol 🚫 Ban. Perintah admin: /ban id, /unban id, /stats.

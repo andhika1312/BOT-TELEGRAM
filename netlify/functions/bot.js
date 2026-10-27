@@ -2,7 +2,7 @@ const { db, bot, abot, send, ref, log, stat, FV } = require('./lib');
 const S = { L: 'Laki-laki', P: 'Perempuan', A: 'Semua' };
 const MENU = { keyboard: [[{ text: '🔍 Cari' }, { text: '⏭ Skip' }], [{ text: '➡️ Next' }, { text: '⛔ Stop' }], [{ text: '👤 Profil' }]], resize_keyboard: true };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const ok = (a, b) => (a.seek === 'A' || a.seek === b.gender) && (b.seek === 'A' || b.seek === a.gender);
+const ok = (a, b) => Math.abs((a.age || 0) - (b.age || 0)) <= 10; // random: semua gender boleh, selisih umur maks. 10 tahun
 const RULES = '👋 Selamat datang di chat anonim!\n\nAturan:\n• Khusus 18 tahun ke atas\n• Dilarang konten seksual eksplisit, pelecehan, penipuan, SARA\n• Percakapan dapat ditinjau admin demi keamanan (maks. 30 hari)\n• Jika belum ada pasangan yang cocok, kamu bisa dihubungkan dengan teman ngobrol otomatis (bot)\n• Pelanggar akan diblokir\n\nIsi profil dulu ya. Gendermu?';
 const kb = (rows) => ({ inline_keyboard: rows });
 const MENU_TEXTS = ['🔍 Cari', '⏭ Skip', '➡️ Next', '⛔ Stop', '👤 Profil'];
@@ -147,7 +147,7 @@ async function relay(uid, u, m) {
   await db.collection('chats').add({ t: Date.now(), from: String(uid), to: String(u.partner), type, text: String(m.text || m.caption || '').slice(0, 1000) });
   if (photo) { await stat('photos'); await log('photo', uid, u.partner); await toAdmin(m, uid, u); }
   if (u.partner === 'BOT') {
-    if (m.text) return botReply(uid, u, m.text);
+    if (m.text) return botReply(uid);
     return send(uid, 'Pesan ini tidak bisa ditampilkan. Coba kirim teks ya.');
   }
   await bot('copyMessage', { chat_id: u.partner, from_chat_id: uid, message_id: m.message_id });
@@ -165,20 +165,8 @@ async function toAdmin(m, uid, u) {
   await fetch(`https://api.telegram.org/bot${process.env.ADMIN_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
 }
 
-async function botReply(uid, u, text) {
-  let hist = [...(u.hist || []), { role: 'user', content: text }];
-  if (hist.length > 7) hist = hist.slice(-7);
-  let reply;
-  if (process.env.ANTHROPIC_API_KEY) {
-    try {
-      const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: process.env.AI_MODEL || 'claude-haiku-5-5', max_tokens: 200, system: 'Kamu bot AI teman ngobrol santai berbahasa Indonesia di chat anonim. Singkat (1-2 kalimat), ramah. Akui bahwa kamu bot jika ditanya. Jangan minta data pribadi, jangan konten seksual.', messages: hist }) });
-      reply = (await r.json()).content?.[0]?.text;
-    } catch (e) { console.error(e); }
-  }
-  if (!reply) reply = ['Hehe iya 😄 cerita lebih banyak dong', 'Wah menarik, lanjut!', 'Menurutmu gimana?', 'Lagi ngapain hari ini?'][Math.floor(Math.random() * 4)];
-  hist.push({ role: 'assistant', content: reply });
-  await ref(uid).update({ hist });
+async function botReply(uid) {
+  const reply = 'hi';
   await send(uid, reply);
   await db.collection('chats').add({ t: Date.now(), from: 'BOT', to: String(uid), type: 'text', text: reply });
 }
