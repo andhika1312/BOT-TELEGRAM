@@ -1,0 +1,17 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+[functions]
+  node_bundler = "esbuild"
+[[redirects]]
+  from = "/api/bot"
+  to = "/.netlify/functions/bot"
+  status = 200
+[[redirects]]
+  from = "/api/admin-bot"
+  to = "/.netlify/functions/admin-bot"
+  status = 200
+[[redirects]]
+  from = "/api/admin"
+  to = "/.netlify/functions/api"
+  status = 200

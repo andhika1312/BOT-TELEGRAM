@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Dashboard</title>
+<style>
+:root{--bg:#0f1117;--card:#1a1d27;--tx:#e8eaf0;--mu:#8b90a0;--ac:#6c8cff;--rd:#ff5c6c;--gr:#3ddc97}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}.hide{display:none!important}
+input,button{font:inherit;padding:9px 12px;border-radius:8px;border:1px solid #2c3040;background:var(--card);color:var(--tx)}
+button{cursor:pointer;background:var(--ac);border:0;color:#fff}button.r{background:var(--rd)}button.g{background:var(--gr);color:#000}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
+.c{background:var(--card);padding:14px;border-radius:12px}.c b{display:block;font-size:26px}.c span{color:var(--mu);font-size:13px}
+.tw{overflow-x:auto;background:var(--card);border-radius:12px;padding:8px}table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #262a38;white-space:nowrap}th{color:var(--mu)}
+.bd{color:var(--rd)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+</style></head><body><div class="wrap">
+<div id="login" style="max-width:320px;margin:20vh auto;text-align:center"><h2>🔐 Admin Login</h2>
+<input id="pw" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><button onclick="login()" style="width:100%">Masuk</button><p id="err" class="bd"></p></div>
+<div id="app" class="hide">
+<div class="row"><h2>📊 Dashboard Bot</h2><button onclick="logout()">Keluar</button></div>
+<div class="grid" id="stats"></div>
+<div class="row"><h3>Pengguna</h3><span><input id="q" placeholder="Cari ID user"> <button onclick="users()">Cari</button></span></div>
+<div class="tw"><table><thead><tr><th>ID</th><th>Nama</th><th>Gender</th><th>Umur</th><th>Cari</th><th>Status</th><th>Pesan</th><th>Foto</th><th>Aksi</th></tr></thead><tbody id="ut"></tbody></table></div>
+<h3>Aktivitas Terbaru</h3><div class="tw"><table><tbody id="lt"></tbody></table></div>
+</div></div>
+<script>
+let T=localStorage.getItem('t')||'';
+const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(b){const r=await fetch('/api/admin',{method:'POST',headers:{Authorization:'Bearer '+T},body:JSON.stringify(b)});if(r.status===401&&b.action!=='login'){logout();throw 0}return r.json()}
+async function login(){const r=await api({action:'login',password:pw.value});if(r.token){T=r.token;localStorage.setItem('t',T);show()}else err.textContent=r.error||'Gagal'}
+function logout(){localStorage.removeItem('t');T='';app.classList.add('hide');login_.classList.remove('hide')}
+const login_=document.getElementById('login');
+function show(){login_.classList.add('hide');app.classList.remove('hide');refresh()}
+async function refresh(){if(!T)return;const s=await api({action:'stats'});
+const L={total:'Total user',queue:'Antrian',humanChat:'Chat manusia',botChat:'Chat dgn bot',matches:'Total match',messages:'Pesan',photos:'Foto',banned:'Diblokir'};
+stats.innerHTML=Object.keys(L).map(k=>`<div class="c"><b>${s[k]??0}</b><span>${L[k]}</span></div>`).join('');
+users();const l=await api({action:'logs'});
+lt.innerHTML=(l.logs||[]).map(x=>`<tr><td>${new Date(x.t).toLocaleString('id-ID')}</td><td>${E(x.type)}</td><td>${E(x.uid)}</td><td>${E(x.extra)}</td></tr>`).join('')}
+async function users(){const r=await api({action:'users',q:q.value});
+ut.innerHTML=(r.users||[]).map(u=>`<tr><td>${E(u.id)}</td><td>${E(u.name)}</td><td>${E(u.gender||'-')}</td><td>${E(u.age||'-')}</td><td>${E(u.seek||'-')}</td><td>${u.banned?'<span class="bd">BANNED</span>':E(u.state)}</td><td>${u.msgCount||0}</td><td>${u.photoCount||0}</td><td>${u.banned?`<button class="g" onclick="act('unban','${E(u.id)}')">Unban</button>`:`<button class="r" onclick="act('ban','${E(u.id)}')">Ban</button>`}</td></tr>`).join('')}
+async function act(a,id){if(confirm(a+' user '+id+'?')){await api({action:a,id});refresh()}}
+if(T)show();setInterval(refresh,10000);
+</script></body></html>
