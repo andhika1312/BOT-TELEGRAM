@@ -32,4 +32,12 @@ async function unbanUser(id) {
   await send(id, '✅ Blokirmu dicabut. Ketik /start untuk lanjut.');
   await log('unban', id); return true;
 }
-module.exports = { db, FV, bot, abot, send, ref, log, stat, banUser, unbanUser };
+async function purgeChats(days = 30) {
+  const cutoff = Date.now() - days * 864e5; let n = 0;
+  for (;;) {
+    const q = await db.collection('chats').where('t', '<', cutoff).limit(400).get();
+    if (q.empty) return n;
+    const b = db.batch(); q.docs.forEach((d) => b.delete(d.ref)); await b.commit(); n += q.size;
+  }
+}
+module.exports = { FP: admin.firestore.FieldPath, purgeChats, db, FV, bot, abot, send, ref, log, stat, banUser, unbanUser };

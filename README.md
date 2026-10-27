@@ -25,6 +25,15 @@ curl "https://api.telegram.org/bot<ADMIN_BOT_TOKEN>/setWebhook?url=https://SITEM
 ## 4. ADMIN_CHAT_ID
 Deploy dulu, kirim `/id` ke bot admin → salin angkanya → isi ADMIN_CHAT_ID → redeploy.
 
+## Log chat
+Semua chat dicatat ke Firestore (koleksi `chats`), dibaca lewat dashboard → Log Chat. Otomatis dihapus setelah 30 hari (ubah dengan env `CHAT_RETENTION_DAYS`). User diberi tahu di aturan /start.
+
+## Laporan & auto-skip bot
+Setelah chat berakhir (skip/stop/di-skip) user melihat penilaian 👍😐👎 + tombol 🚩 Laporkan (pilih Seksual/Kasar/Spam/Lainnya, lalu jelaskan). Laporan + 30 pesan terakhir masuk dashboard dan bot admin. Bot pengganti dilewati otomatis ±10 detik lewat `botexpire-background` (variabel `URL` disediakan Netlify otomatis).
+
+## Broadcast
+Dashboard → Broadcast: tulis pengumuman, kirim ke semua user (kecuali yang diblokir). Berjalan di background (±25 pesan/detik), progres tampil di dashboard. User yang memblokir bot dihitung 'gagal'.
+
 ## Fitur
 - User: /start (gender, umur 18+, minat), /search, Skip, Next, Stop.
 - Tidak ada pasangan cocok dalam ±6 detik → masuk BOT (diberi label jelas).

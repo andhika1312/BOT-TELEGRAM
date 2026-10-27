@@ -3,7 +3,7 @@ const S = { L: 'Laki-laki', P: 'Perempuan', A: 'Semua' };
 const MENU = { keyboard: [[{ text: '🔍 Cari' }, { text: '⏭ Skip' }], [{ text: '➡️ Next' }, { text: '⛔ Stop' }]], resize_keyboard: true };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ok = (a, b) => (a.seek === 'A' || a.seek === b.gender) && (b.seek === 'A' || b.seek === a.gender);
-const RULES = '👋 Selamat datang di chat anonim!\n\nAturan:\n• Khusus 18 tahun ke atas\n• Dilarang konten seksual eksplisit, pelecehan, penipuan, SARA\n• Foto yang dikirim diteruskan ke admin untuk moderasi (isi teks tidak disimpan)\n• Jika tidak ada pasangan yang cocok, kamu akan dihubungkan dengan BOT (diberi label jelas)\n• Pelanggar akan diblokir\n\nIsi profil dulu ya. Gendermu?';
+const RULES = '👋 Selamat datang di chat anonim!\n\nAturan:\n• Khusus 18 tahun ke atas\n• Dilarang konten seksual eksplisit, pelecehan, penipuan, SARA\n• Percakapan (teks & foto) dicatat dan dapat ditinjau admin demi keamanan, disimpan maksimal 30 hari\n• Jika tidak ada pasangan yang cocok, kamu akan dihubungkan dengan BOT (diberi label jelas)\n• Pelanggar akan diblokir\n\nIsi profil dulu ya. Gendermu?';
 const kb = (rows) => ({ inline_keyboard: rows });
 
 exports.handler = async (event) => {
@@ -15,7 +15,7 @@ exports.handler = async (event) => {
 async function load(from) {
   const r = ref(from.id); const s = await r.get();
   if (s.exists) return s.data();
-  const u = { name: from.first_name || '', state: 'setup', step: 'gender', banned: false, createdAt: Date.now(), lastActive: Date.now(), msgCount: 0, photoCount: 0 };
+  const u = { name: from.first_name || '', state: 'setup', step: 'gender', banned: false, createdAt: Date.now(), lastActive: Date.now(), msgCount: 0, photoCount: 0, ack2: true };
   await r.set(u); await log('join', from.id); await stat('users'); return u;
 }
 
@@ -27,6 +27,7 @@ async function handle(up) {
   if (u.banned) return send(uid, '🚫 Akunmu diblokir.');
   await ref(uid).update({ lastActive: Date.now() });
 
+  if (u.pendingReport && ((t && !t.startsWith('/')) || t === '/lewati')) return submitReport(uid, u, t === '/lewati' ? '' : t);
   if (t === '/start' || t === '/ubah') { if (u.partner) await endChat(uid, u); await ref(uid).update({ state: 'setup', step: 'gender', partner: null }); return send(uid, RULES, { reply_markup: kb([[{ text: '👨 Laki-laki', callback_data: 'g:L' }, { text: '👩 Perempuan', callback_data: 'g:P' }]]) }); }
   if (u.state === 'setup') {
     if (u.step === 'age') {
@@ -40,17 +41,23 @@ async function handle(up) {
   }
   if (t === '/search' || t === '🔍 Cari') return u.state === 'chat' ? send(uid, 'Kamu sedang chat. Pakai Next/Skip/Stop.') : search(uid);
   if (['/next', '➡️ Next', '/skip', '⏭ Skip'].includes(t)) return search(uid);
-  if (t === '/stop' || t === '⛔ Stop') { await endChat(uid, u); await ref(uid).update({ state: 'idle', partner: null }); return send(uid, 'Chat dihentikan. Ketik /search untuk mulai lagi.', { reply_markup: MENU }); }
+  if (t === '/stop' || t === '⛔ Stop') return stop(uid, u);
   if (u.state === 'chat') return relay(uid, u, m);
   if (u.state === 'queue') return send(uid, '🔍 Masih mencari pasangan...');
   return send(uid, 'Ketik /search untuk mencari pasangan.', { reply_markup: MENU });
 }
 
 async function cb(q) {
-  const uid = q.from.id, [k, v] = q.data.split(':');
+  const uid = q.from.id, p = q.data.split(':'), k = p[0], v = p[1];
   await bot('answerCallbackQuery', { callback_query_id: q.id });
   const u = await load(q.from);
-  if (u.banned || u.state !== 'setup') return;
+  if (u.banned) return;
+  const edit = (text, reply_markup) => bot('editMessageText', { chat_id: uid, message_id: q.message.message_id, text, ...(reply_markup ? { reply_markup } : {}) });
+  if (k === 'nx' || k === 'xx') { if (u.state === 'chat' && String(u.partner) === v) return k === 'nx' ? search(uid) : stop(uid, u); return; }
+  if (k === 'fb') { await db.collection('feedback').add({ t: Date.now(), from: String(uid), about: p[2], rating: v }); await stat({ g: 'fbGood', o: 'fbOk', b: 'fbBad' }[v] || 'fbOk'); return edit('Terima kasih atas penilaianmu 🙏'); }
+  if (k === 'rp') return edit('🚩 Kenapa kamu melaporkan pasangan tadi? Pilih alasan:', kb([[{ text: '🔞 Seksual', callback_data: 'rc:sx:' + v }], [{ text: '😡 Kasar / pelecehan', callback_data: 'rc:ha:' + v }], [{ text: '💸 Penipuan / spam', callback_data: 'rc:sp:' + v }], [{ text: '✍️ Lainnya', callback_data: 'rc:ot:' + v }]]));
+  if (k === 'rc') { await ref(uid).update({ pendingReport: { target: p[2], cat: v } }); return edit('✍️ Jelaskan singkat apa yang terjadi (ketik pesanmu), atau kirim /lewati untuk tanpa penjelasan.'); }
+  if (u.state !== 'setup') return;
   if (k === 'g' && u.step === 'gender') { await ref(uid).update({ gender: v, step: 'age' }); return send(uid, 'Berapa umurmu? (angka, minimal 18)'); }
   if (k === 's' && u.step === 'seek') { await ref(uid).update({ seek: v, state: 'idle', step: 'done' }); return send(uid, '✅ Profil tersimpan! Ketik /search atau tekan 🔍 Cari.', { reply_markup: MENU }); }
 }
@@ -59,22 +66,30 @@ async function endChat(uid, u) {
   if (u.partner && u.partner !== 'BOT') {
     await ref(u.partner).update({ state: 'idle', partner: null });
     await send(u.partner, '👋 Pasanganmu mengakhiri chat. Ketik /search untuk cari lagi.', { reply_markup: MENU });
+    await askFeedback(u.partner, uid);
+    await askFeedback(uid, u.partner);
   }
 }
 
 async function search(uid) {
   const u = (await ref(uid).get()).data();
+  if (!u.ack2) { await send(uid, 'ℹ️ Pemberitahuan: percakapan di bot ini dicatat dan dapat ditinjau admin demi keamanan (disimpan maksimal 30 hari). Dengan lanjut memakai bot, kamu menyetujuinya.'); await ref(uid).update({ ack2: true }); }
   await endChat(uid, u);
   await ref(uid).update({ state: 'queue', partner: null, queuedAt: Date.now(), hist: [] });
   await send(uid, '🔍 Mencari pasangan...', { reply_markup: MENU });
   if (await tryMatch(uid)) return;
   await sleep(6000);
+  const since = Date.now();
   const joined = await db.runTransaction(async (t) => {
     const s = await t.get(ref(uid));
     if (s.data().state !== 'queue') return false;
-    t.update(ref(uid), { state: 'chat', partner: 'BOT', hist: [] }); return true;
+    t.update(ref(uid), { state: 'chat', partner: 'BOT', hist: [], botSince: since }); return true;
   });
-  if (joined) { await send(uid, '🤖 Belum ada yang cocok online. Kamu terhubung dengan BOT teman ngobrol (bukan manusia). Tekan Next untuk cari orang sungguhan.'); await log('bot_join', uid); await stat('botChats'); }
+  if (joined) {
+    await send(uid, '🤖 Belum ada yang cocok online. Kamu terhubung dengan BOT teman ngobrol (bukan manusia) dan akan dilewati otomatis sekitar 10 detik lagi.', { reply_markup: kb([[{ text: '➡️ Next', callback_data: 'nx:BOT' }, { text: '⛔ Stop', callback_data: 'xx:BOT' }]]) });
+    await log('bot_join', uid); await stat('botChats');
+    await fetch(process.env.URL + '/.netlify/functions/botexpire-background', { method: 'POST', headers: { 'x-secret': process.env.WEBHOOK_SECRET }, body: JSON.stringify({ uid, since }) }).catch(console.error);
+  }
 }
 
 async function tryMatch(uid) {
@@ -87,12 +102,13 @@ async function tryMatch(uid) {
     const done = await db.runTransaction(async (t) => {
       const [a, b] = await Promise.all([t.get(ref(uid)), t.get(d.ref)]);
       if (a.data().state !== 'queue' || b.data().state !== 'queue') return false;
-      t.update(a.ref, { state: 'chat', partner: d.id, hist: [] }); t.update(b.ref, { state: 'chat', partner: String(uid), hist: [] }); return true;
+      t.update(a.ref, { state: 'chat', partner: d.id, hist: [], botRounds: 0 }); t.update(b.ref, { state: 'chat', partner: String(uid), hist: [], botRounds: 0 }); return true;
     });
     if (done) {
       const info = (x) => `${S[x.gender]}, ${x.age} th`;
-      await send(uid, `✅ Pasangan ditemukan! (${info(c)})\nSapa dia 👋`);
-      await send(d.id, `✅ Pasangan ditemukan! (${info(me)})\nSapa dia 👋`);
+      const ctl = (pid) => ({ reply_markup: kb([[{ text: '➡️ Next', callback_data: 'nx:' + pid }, { text: '⛔ Stop', callback_data: 'xx:' + pid }]]) });
+      await send(uid, `✅ Pasangan ditemukan! (${info(c)})\nSapa dia 👋`, ctl(d.id));
+      await send(d.id, `✅ Pasangan ditemukan! (${info(me)})\nSapa dia 👋`, ctl(uid));
       await log('match', uid, d.id); await stat('matches'); return true;
     }
   }
@@ -103,6 +119,8 @@ async function relay(uid, u, m) {
   const photo = !!m.photo;
   await ref(uid).update({ msgCount: FV.increment(1), ...(photo ? { photoCount: FV.increment(1) } : {}) });
   await stat('messages');
+  const type = m.text ? 'text' : ['photo', 'sticker', 'voice', 'video', 'document', 'animation', 'video_note', 'audio'].find((k) => m[k]) || 'other';
+  await db.collection('chats').add({ t: Date.now(), from: String(uid), to: String(u.partner), type, text: String(m.text || m.caption || '').slice(0, 1000) });
   if (photo) { await stat('photos'); await log('photo', uid, u.partner); await toAdmin(m, uid, u); }
   if (u.partner === 'BOT') {
     if (m.text) return botReply(uid, u, m.text);
@@ -138,4 +156,33 @@ async function botReply(uid, u, text) {
   hist.push({ role: 'assistant', content: reply });
   await ref(uid).update({ hist });
   await send(uid, '🤖 ' + reply);
+  await db.collection('chats').add({ t: Date.now(), from: 'BOT', to: String(uid), type: 'text', text: reply });
 }
+
+const CAT = { sx: '🔞 SEKSUAL', ha: '😡 Kasar/pelecehan', sp: '💸 Penipuan/spam', ot: '✍️ Lainnya' };
+const fbKb = (pid) => kb([[{ text: '👍 Bagus', callback_data: 'fb:g:' + pid }, { text: '😐 Biasa', callback_data: 'fb:o:' + pid }, { text: '👎 Buruk', callback_data: 'fb:b:' + pid }], [{ text: '🚩 Laporkan', callback_data: 'rp:' + pid }]]);
+const askFeedback = (uid, pid) => send(uid, 'Bagaimana pengalamanmu dengan pasangan tadi?', { reply_markup: fbKb(pid) });
+
+async function stop(uid, u) {
+  await endChat(uid, u);
+  await ref(uid).update({ state: 'idle', partner: null });
+  return send(uid, 'Chat dihentikan. Ketik /search untuk mulai lagi.', { reply_markup: MENU });
+}
+
+async function evidence(a, b) {
+  const C = db.collection('chats');
+  const [x, y] = await Promise.all([C.where('from', '==', a).where('to', '==', b).limit(100).get(), C.where('from', '==', b).where('to', '==', a).limit(100).get()]);
+  return [...x.docs, ...y.docs].map((d) => d.data()).sort((p, q) => p.t - q.t).slice(-30);
+}
+
+async function submitReport(uid, u, text) {
+  const { target, cat } = u.pendingReport;
+  await ref(uid).update({ pendingReport: FV.delete() });
+  await db.collection('reports').add({ t: Date.now(), reporter: String(uid), reported: String(target), cat, text: text.slice(0, 500), status: 'open', evidence: await evidence(String(uid), String(target)) });
+  await stat('reports'); await log('report', uid, target + ':' + cat);
+  await send(uid, '✅ Laporan terkirim. Terima kasih, admin akan meninjaunya.', { reply_markup: MENU });
+  await abot('sendMessage', { chat_id: process.env.ADMIN_CHAT_ID, text: `🚩 LAPORAN ${CAT[cat]}\nPelapor: ${uid}\nTerlapor: ${target}\nPenjelasan: ${text || '-'}\nBukti chat: lihat dashboard → Laporan`, reply_markup: kb([[{ text: '🚫 Ban terlapor', callback_data: 'ban:' + target }]]) });
+}
+
+exports.search = search;
+exports.MENU = MENU;

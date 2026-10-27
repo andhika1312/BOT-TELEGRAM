@@ -1,42 +1,127 @@
 <!DOCTYPE html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin Dashboard</title>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Anon Bot · Admin</title>
 <style>
-:root{--bg:#0f1117;--card:#1a1d27;--tx:#e8eaf0;--mu:#8b90a0;--ac:#6c8cff;--rd:#ff5c6c;--gr:#3ddc97}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx)}
-.wrap{max-width:1100px;margin:0 auto;padding:16px}.hide{display:none!important}
-input,button{font:inherit;padding:9px 12px;border-radius:8px;border:1px solid #2c3040;background:var(--card);color:var(--tx)}
-button{cursor:pointer;background:var(--ac);border:0;color:#fff}button.r{background:var(--rd)}button.g{background:var(--gr);color:#000}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
-.c{background:var(--card);padding:14px;border-radius:12px}.c b{display:block;font-size:26px}.c span{color:var(--mu);font-size:13px}
-.tw{overflow-x:auto;background:var(--card);border-radius:12px;padding:8px}table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:8px;text-align:left;border-bottom:1px solid #262a38;white-space:nowrap}th{color:var(--mu)}
-.bd{color:var(--rd)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-</style></head><body><div class="wrap">
-<div id="login" style="max-width:320px;margin:20vh auto;text-align:center"><h2>🔐 Admin Login</h2>
-<input id="pw" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><button onclick="login()" style="width:100%">Masuk</button><p id="err" class="bd"></p></div>
-<div id="app" class="hide">
-<div class="row"><h2>📊 Dashboard Bot</h2><button onclick="logout()">Keluar</button></div>
+:root{--bg:#0b0d14;--p2:#1b2033;--bd:#262c42;--tx:#e9ecf6;--mu:#8b93b0;--a:#7c6cff;--a2:#4cc9f0;--rd:#ff5d73;--gr:#35d6a0;--yl:#ffc857;--r:14px}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--tx);min-height:100vh;background:radial-gradient(900px 500px at 85% -10%,#2a2470,transparent 60%),radial-gradient(700px 400px at -10% 110%,#0f4c75,transparent 55%),var(--bg);background-attachment:fixed}
+.hide{display:none!important}button,input,textarea{font:inherit;color:var(--tx)}
+input,textarea{background:var(--p2);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;outline:none;width:100%}
+input:focus,textarea:focus{border-color:var(--a);box-shadow:0 0 0 3px #7c6cff33}
+.btn{border:0;border-radius:10px;padding:9px 14px;cursor:pointer;background:linear-gradient(135deg,var(--a),#5b8cff);color:#fff;font-weight:600;transition:.15s;white-space:nowrap}
+.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}.btn.s{padding:6px 10px;font-size:13px}
+.btn.r{background:linear-gradient(135deg,#ff5d73,#e0334f)}.btn.g{background:linear-gradient(135deg,#35d6a0,#1fae82);color:#04261c}.btn.o{background:var(--p2);border:1px solid var(--bd)}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+aside{padding:20px 14px;border-right:1px solid var(--bd);background:#0d1019cc;backdrop-filter:blur(10px);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+.brand{font-weight:800;font-size:18px;padding:6px 10px 16px;display:flex;gap:10px;align-items:center}
+.brand i{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--a),var(--a2));display:grid;place-items:center;font-style:normal}
+.nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--mu);cursor:pointer;border:0;background:none;text-align:left;width:100%}
+.nav:hover{background:var(--p2);color:var(--tx)}.nav.on{background:linear-gradient(135deg,#7c6cff33,#4cc9f022);color:var(--tx);box-shadow:inset 0 0 0 1px #7c6cff55}
+.nav b{margin-left:auto;background:var(--rd);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px}
+.sp{flex:1}main{padding:26px;max-width:1100px;width:100%}
+h1{margin:0 0 4px;font-size:22px}.sub{color:var(--mu);margin:0 0 18px}
+.card{background:linear-gradient(180deg,#171c2e,#131726);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}.grid .card{margin:0}
+.stat b{display:block;font-size:28px;line-height:1.15}.stat span{color:var(--mu);font-size:13px}.stat .ic{font-size:20px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}.row>.f{display:flex;gap:8px;flex:1;min-width:220px;max-width:460px}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}
+th{color:var(--mu);font-weight:600;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em}td,th{padding:10px;border-bottom:1px solid var(--bd);white-space:nowrap}tr:last-child td{border:0}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;background:#7c6cff26;color:#b3a9ff}
+.b-g{background:#35d6a01f;color:var(--gr)}.b-r{background:#ff5d7326;color:var(--rd)}.b-y{background:#ffc85722;color:var(--yl)}.b-b{background:#4cc9f022;color:var(--a2)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--mu)}
+.bar{height:10px;border-radius:99px;overflow:hidden;display:flex;background:var(--p2)}.bar i{display:block;transition:width .4s}
+.live{display:inline-flex;align-items:center;gap:6px;color:var(--mu);font-size:13px}
+.live:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gr);animation:p 1.8s infinite}@keyframes p{0%{box-shadow:0 0 0 0 #35d6a099}70%,100%{box-shadow:0 0 0 8px #35d6a000}}
+.msg{display:flex;gap:12px;padding:10px 2px;border-bottom:1px solid var(--bd);align-items:flex-start}.msg:last-child{border:0}
+.msg .t{color:var(--mu);font-size:12px;min-width:92px}.msg .x{flex:1;word-break:break-word}
+.rep .h{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}.rep .ev{background:var(--p2);border-radius:10px;padding:10px;margin-top:10px;font-size:13px;max-height:260px;overflow:auto}
+.bub{background:linear-gradient(135deg,var(--a),#5b8cff);border-radius:16px 16px 4px 16px;padding:12px 14px;max-width:340px;white-space:pre-wrap;word-break:break-word}
+#toast{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:9}
+#toast div{background:#1d2340;border:1px solid var(--a);padding:10px 14px;border-radius:10px;animation:in .2s}@keyframes in{from{opacity:0;transform:translateY(8px)}}
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}.login .card{width:100%;max-width:360px;text-align:center;box-shadow:0 20px 60px #0008}
+@media(max-width:800px){.shell{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;overflow-x:auto;padding:10px;border-right:0;border-bottom:1px solid var(--bd)}.brand,.sp{display:none}.nav{white-space:nowrap;width:auto}main{padding:16px}}
+</style></head><body>
+<div id="login" class="login"><div class="card"><div style="font-size:42px">🔐</div><h1>Admin Login</h1><p class="sub">Anon Bot Dashboard</p>
+<input id="pw" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')login()"><button class="btn" style="width:100%;margin-top:12px" onclick="login()">Masuk</button><p id="err" style="color:var(--rd);margin:10px 0 0"></p></div></div>
+
+<div id="app" class="shell hide">
+<aside><div class="brand"><i>💬</i>Anon Bot</div>
+<button class="nav on" data-p="ov" onclick="go('ov')">📊 Ringkasan</button>
+<button class="nav" data-p="us" onclick="go('us')">👥 Pengguna</button>
+<button class="nav" data-p="ch" onclick="go('ch')">💬 Log Chat</button>
+<button class="nav" data-p="rp" onclick="go('rp')">🚩 Laporan <b id="nb" class="hide">0</b></button>
+<button class="nav" data-p="bc" onclick="go('bc')">📢 Broadcast</button>
+<button class="nav" data-p="ac" onclick="go('ac')">🕒 Aktivitas</button>
+<div class="sp"></div><button class="nav" onclick="logout()">🚪 Keluar</button></aside>
+<main>
+<section class="pg" id="p-ov"><div class="row"><div><h1>Ringkasan</h1><p class="sub" style="margin:0">Statistik bot secara langsung</p></div><span class="live">Live · auto refresh</span></div>
 <div class="grid" id="stats"></div>
-<div class="row"><h3>Pengguna</h3><span><input id="q" placeholder="Cari ID user"> <button onclick="users()">Cari</button></span></div>
-<div class="tw"><table><thead><tr><th>ID</th><th>Nama</th><th>Gender</th><th>Umur</th><th>Cari</th><th>Status</th><th>Pesan</th><th>Foto</th><th>Aksi</th></tr></thead><tbody id="ut"></tbody></table></div>
-<h3>Aktivitas Terbaru</h3><div class="tw"><table><tbody id="lt"></tbody></table></div>
-</div></div>
+<div class="card"><b>Penilaian pengguna</b><div class="bar" style="margin:12px 0 8px" id="fbar"></div><div id="fleg" class="mono"></div></div></section>
+
+<section class="pg hide" id="p-us"><h1>Pengguna</h1><p class="sub">100 pengguna terakhir aktif</p>
+<div class="row"><div class="f"><input id="uq" placeholder="Cari berdasarkan ID user" onkeydown="if(event.key==='Enter')users()"><button class="btn" onclick="users()">Cari</button></div></div>
+<div class="card tw"><table><thead><tr><th>ID</th><th>Nama</th><th>Gender</th><th>Umur</th><th>Cari</th><th>Status</th><th>Pesan/Foto</th><th>Aktif</th><th>Aksi</th></tr></thead><tbody id="ut"></tbody></table></div></section>
+
+<section class="pg hide" id="p-ch"><h1>Log Chat</h1><p class="sub">Percakapan disimpan 30 hari untuk keamanan</p>
+<div class="row"><div class="f"><input id="cu" placeholder="Filter ID user (kosong = terbaru)" onkeydown="if(event.key==='Enter')chats()"><button class="btn" onclick="chats()">Lihat</button></div><button class="btn r s" onclick="purge()">Hapus chat &gt; 30 hari</button></div>
+<div class="card" id="cl"></div></section>
+
+<section class="pg hide" id="p-rp"><h1>Laporan Pengguna</h1><p class="sub">Tinjau bukti chat, lalu ban atau tandai selesai</p><div id="rl"></div></section>
+
+<section class="pg hide" id="p-bc"><h1>Broadcast</h1><p class="sub">Kirim pengumuman ke semua pengguna bot</p>
+<div class="card"><textarea id="bt" rows="5" maxlength="3500" placeholder="Tulis pengumuman..." oninput="prev()"></textarea>
+<div class="row" style="margin:12px 0 0"><span class="mono" id="cc">0 / 3500</span><button class="btn" onclick="sendBc()">🚀 Kirim ke semua</button></div>
+<div style="margin-top:14px"><span class="mono">Pratinjau di Telegram</span><div class="bub" id="pv" style="margin-top:6px">📢 Pengumuman</div></div></div>
+<h3>Riwayat</h3><div id="bh"></div></section>
+
+<section class="pg hide" id="p-ac"><h1>Aktivitas Terbaru</h1><p class="sub">60 kejadian terakhir</p><div class="card" id="al"></div></section>
+</main></div>
+<div id="toast"></div>
 <script>
-let T=localStorage.getItem('t')||'';
+let T=localStorage.getItem('t')||'',P='ov',R=[],BT;
+const $=id=>document.getElementById(id);
 const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=t=>t?new Date(t).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'-';
+const toast=m=>{const d=document.createElement('div');d.textContent=m;$('toast').append(d);setTimeout(()=>d.remove(),3200)};
 async function api(b){const r=await fetch('/api/admin',{method:'POST',headers:{Authorization:'Bearer '+T},body:JSON.stringify(b)});if(r.status===401&&b.action!=='login'){logout();throw 0}return r.json()}
-async function login(){const r=await api({action:'login',password:pw.value});if(r.token){T=r.token;localStorage.setItem('t',T);show()}else err.textContent=r.error||'Gagal'}
-function logout(){localStorage.removeItem('t');T='';app.classList.add('hide');login_.classList.remove('hide')}
-const login_=document.getElementById('login');
-function show(){login_.classList.add('hide');app.classList.remove('hide');refresh()}
-async function refresh(){if(!T)return;const s=await api({action:'stats'});
-const L={total:'Total user',queue:'Antrian',humanChat:'Chat manusia',botChat:'Chat dgn bot',matches:'Total match',messages:'Pesan',photos:'Foto',banned:'Diblokir'};
-stats.innerHTML=Object.keys(L).map(k=>`<div class="c"><b>${s[k]??0}</b><span>${L[k]}</span></div>`).join('');
-users();const l=await api({action:'logs'});
-lt.innerHTML=(l.logs||[]).map(x=>`<tr><td>${new Date(x.t).toLocaleString('id-ID')}</td><td>${E(x.type)}</td><td>${E(x.uid)}</td><td>${E(x.extra)}</td></tr>`).join('')}
-async function users(){const r=await api({action:'users',q:q.value});
-ut.innerHTML=(r.users||[]).map(u=>`<tr><td>${E(u.id)}</td><td>${E(u.name)}</td><td>${E(u.gender||'-')}</td><td>${E(u.age||'-')}</td><td>${E(u.seek||'-')}</td><td>${u.banned?'<span class="bd">BANNED</span>':E(u.state)}</td><td>${u.msgCount||0}</td><td>${u.photoCount||0}</td><td>${u.banned?`<button class="g" onclick="act('unban','${E(u.id)}')">Unban</button>`:`<button class="r" onclick="act('ban','${E(u.id)}')">Ban</button>`}</td></tr>`).join('')}
-async function act(a,id){if(confirm(a+' user '+id+'?')){await api({action:a,id});refresh()}}
-if(T)show();setInterval(refresh,10000);
+async function login(){const r=await api({action:'login',password:$('pw').value});if(r.token){T=r.token;localStorage.setItem('t',T);enter()}else $('err').textContent=r.error||'Gagal masuk'}
+function logout(){localStorage.removeItem('t');T='';$('app').classList.add('hide');$('login').classList.remove('hide')}
+function enter(){$('login').classList.add('hide');$('app').classList.remove('hide');load()}
+function go(p){P=p;document.querySelectorAll('.pg').forEach(e=>e.classList.toggle('hide',e.id!=='p-'+p));document.querySelectorAll('.nav[data-p]').forEach(e=>e.classList.toggle('on',e.dataset.p===p));load()}
+const PG={ov:()=>0,us:()=>users(),ch:()=>chats(),rp:()=>0,bc:()=>bcs(),ac:()=>logs()};
+async function load(){if(!T)return;try{await Promise.all([stats(),reports(),PG[P]()])}catch(e){}}
+async function stats(){const s=await api({action:'stats'});
+const S=[['👥','total','Total user'],['⏳','queue','Antrian'],['💬','humanChat','Chat manusia'],['🤖','botChat','Chat dengan bot'],['❤️','matches','Total match'],['✉️','messages','Pesan'],['📷','photos','Foto'],['🚩','reports','Laporan'],['🚫','banned','Diblokir']];
+$('stats').innerHTML=S.map(([i,k,l])=>`<div class="card stat"><span class="ic">${i}</span><b>${s[k]??0}</b><span>${l}</span></div>`).join('');
+const g=s.fbGood,o=s.fbOk,b=s.fbBad,t=(g+o+b)||1;
+$('fbar').innerHTML=`<i style="width:${g/t*100}%;background:var(--gr)"></i><i style="width:${o/t*100}%;background:var(--yl)"></i><i style="width:${b/t*100}%;background:var(--rd)"></i>`;
+$('fleg').textContent=`👍 ${g}   😐 ${o}   👎 ${b}`;
+const nb=$('nb');nb.textContent=s.openReports;nb.classList.toggle('hide',!s.openReports)}
+async function users(){const r=await api({action:'users',q:$('uq').value});
+const SB={queue:'b-y',chat:'b-g',setup:'b-b'},GN={L:'♂ Laki-laki',P:'♀ Perempuan'},SK={L:'Laki-laki',P:'Perempuan',A:'Semua'};
+$('ut').innerHTML=(r.users||[]).map(u=>`<tr><td class="mono">${E(u.id)}</td><td>${E(u.name)}</td><td>${GN[u.gender]||'-'}</td><td>${E(u.age||'-')}</td><td>${SK[u.seek]||'-'}</td><td>${u.banned?'<span class="badge b-r">BANNED</span>':`<span class="badge ${SB[u.state]||''}">${E(u.state)}</span>`}</td><td>${u.msgCount||0} / ${u.photoCount||0}</td><td>${fmt(u.lastActive)}</td><td><button class="btn s o" onclick="goChat('${E(u.id)}')">Chat</button> ${u.banned?`<button class="btn s g" onclick="act('unban','${E(u.id)}')">Unban</button>`:`<button class="btn s r" onclick="act('ban','${E(u.id)}')">Ban</button>`}</td></tr>`).join('')||'<tr><td colspan="9">Tidak ada pengguna</td></tr>'}
+function goChat(id){$('cu').value=id;go('ch')}
+async function chats(){const r=await api({action:'chats',uid:$('cu').value});
+$('cl').innerHTML=(r.chats||[]).map(c=>`<div class="msg"><span class="t">${fmt(c.t)}</span><span class="x"><span class="mono">${E(c.from)} → ${E(c.to)}</span> ${c.type!=='text'?`<span class="badge b-b">${E(c.type)}</span>`:''}<br>${E(c.text)}</span></div>`).join('')||'<p class="sub" style="margin:0">Belum ada chat</p>'}
+async function purge(){if(confirm('Hapus semua chat lebih dari 30 hari?')){const r=await api({action:'purge',days:30});toast(r.deleted+' chat dihapus')}}
+async function reports(){const r=await api({action:'reports'});R=r.reports||[];
+const C={sx:['🔞 Seksual','b-r'],ha:['😡 Kasar / pelecehan','b-y'],sp:['💸 Spam / penipuan','b-y'],ot:['✍️ Lainnya','']};
+$('rl').innerHTML=R.map(x=>{const c=C[x.cat]||[E(x.cat),''],open=x.status==='open';
+return `<div class="card rep"><div class="h"><span class="badge ${c[1]}">${c[0]}</span><span class="badge ${open?'b-b':'b-g'}">${open?'Baru':'Selesai'}</span><span class="mono">${fmt(x.t)}</span></div>
+<div>Pelapor <span class="mono">${E(x.reporter)}</span> → Terlapor <b class="mono" style="color:var(--tx)">${E(x.reported)}</b></div>
+<p style="margin:8px 0;color:var(--mu)">${E(x.text)||'<i>Tanpa penjelasan</i>'}</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn s o" onclick="this.closest('.rep').querySelector('.ev').classList.toggle('hide')">🔎 Bukti chat</button><button class="btn s r" onclick="act('ban','${E(x.reported)}')">🚫 Ban terlapor</button>${open?`<button class="btn s g" onclick="closeRep('${E(x.id)}')">✔ Selesai</button>`:''}</div>
+<div class="ev hide">${(x.evidence||[]).map(e=>`<div><span class="mono">${fmt(e.t)}</span> <b>${E(e.from)}</b>: ${E(e.type==='text'?e.text:'['+e.type+'] '+e.text)}</div>`).join('')||'Tidak ada bukti tersimpan'}</div></div>`}).join('')||'<div class="card"><p class="sub" style="margin:0">Belum ada laporan 🎉</p></div>'}
+async function closeRep(id){await api({action:'report_close',id});toast('Laporan ditandai selesai');load()}
+function prev(){const v=$('bt').value;$('cc').textContent=v.length+' / 3500';$('pv').textContent='📢 Pengumuman\n\n'+v}
+async function sendBc(){const text=$('bt').value.trim();if(!text)return toast('Tulis pengumuman dulu');
+if(!confirm('Kirim ke SEMUA pengguna?\n\n'+text.slice(0,200)))return;
+const r=await api({action:'broadcast',text});if(r.id){toast('Broadcast dimulai 🚀');$('bt').value='';prev();bcs()}else toast(r.error||'Gagal mengirim')}
+async function bcs(){clearTimeout(BT);const r=await api({action:'broadcasts'}),L=r.broadcasts||[];
+$('bh').innerHTML=L.map(b=>{const d=b.sent+b.failed,pc=b.total?Math.min(100,Math.round(d/b.total*100)):0,done=b.status==='done';
+return `<div class="card"><div class="row" style="margin-bottom:8px"><span class="mono">${fmt(b.t)}</span><span class="badge ${done?'b-g':'b-y'}">${done?'Selesai':b.status==='sending'?'Mengirim...':'Antre'}</span></div><div style="white-space:pre-wrap;word-break:break-word;margin-bottom:10px">${E(b.text)}</div><div class="bar"><i style="width:${done?100:pc}%;background:linear-gradient(90deg,var(--a),var(--a2))"></i></div><div class="mono" style="margin-top:6px">✅ ${b.sent} terkirim · ❌ ${b.failed} gagal · total ${b.total}</div></div>`}).join('')||'<div class="card"><p class="sub" style="margin:0">Belum ada broadcast</p></div>';
+if(L.some(b=>b.status!=='done'))BT=setTimeout(()=>P==='bc'&&bcs(),3000)}
+async function logs(){const r=await api({action:'logs'});const IC={join:'🆕',match:'❤️',bot_join:'🤖',photo:'📷',ban:'🚫',unban:'✅',report:'🚩'};
+$('al').innerHTML=(r.logs||[]).map(x=>`<div class="msg"><span class="t">${fmt(x.t)}</span><span class="x">${IC[x.type]||'•'} <b>${E(x.type)}</b> <span class="mono">${E(x.uid)} ${E(x.extra)}</span></span></div>`).join('')||'<p class="sub" style="margin:0">Belum ada aktivitas</p>'}
+async function act(a,id){if(confirm((a==='ban'?'Blokir':'Buka blokir')+' user '+id+'?')){await api({action:a,id});toast(a==='ban'?'User diblokir':'Blokir dibuka');load()}}
+if(T)enter();setInterval(load,10000);
 </script></body></html>
