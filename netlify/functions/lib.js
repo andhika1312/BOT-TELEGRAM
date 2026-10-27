@@ -32,6 +32,14 @@ async function unbanUser(id) {
   await send(id, '✅ Blokirmu dicabut. Ketik /start untuk lanjut.');
   await log('unban', id); return true;
 }
+async function warnUser(id, text, by = 'admin') {
+  id = String(id);
+  if (!(await ref(id).get()).exists) return 'notfound';
+  const r = await send(id, '⚠️ Peringatan dari admin:\n\n' + text);
+  if (!r.ok) return 'failed';
+  await log('warn', id, by + ': ' + text.slice(0, 80)); await stat('warns');
+  return 'ok';
+}
 async function purgeChats(days = 30) {
   const cutoff = Date.now() - days * 864e5; let n = 0;
   for (;;) {
@@ -40,4 +48,4 @@ async function purgeChats(days = 30) {
     const b = db.batch(); q.docs.forEach((d) => b.delete(d.ref)); await b.commit(); n += q.size;
   }
 }
-module.exports = { FP: admin.firestore.FieldPath, purgeChats, db, FV, bot, abot, send, ref, log, stat, banUser, unbanUser };
+module.exports = { FP: admin.firestore.FieldPath, purgeChats, db, FV, bot, abot, send, ref, log, stat, banUser, unbanUser, warnUser };

@@ -35,8 +35,8 @@ Setelah chat berakhir (skip/stop/di-skip) user melihat penilaian 👍😐👎 + 
 Dashboard → Broadcast: tulis pengumuman, kirim ke semua user (kecuali yang diblokir). Berjalan di background (±25 pesan/detik), progres tampil di dashboard. User yang memblokir bot dihitung 'gagal'.
 
 ## Fitur
-- Pencocokan acak: semua gender bisa bertemu, selisih umur maksimal 10 tahun.
+- Pencocokan acak penuh: semua gender dan umur berapa pun (minimal 18 saat daftar) bisa bertemu.
 - User: /start (gender, umur 18+, minat), /search, Skip, Next, Stop, /profil (ubah gender, umur, minat tanpa mengulang dari awal).
 - Tidak ada pasangan cocok dalam ±6 detik → tampil "Pasangan ditemukan" (teman ngobrol otomatis), dilewati otomatis ±10 detik.
-- Foto diteruskan ke bot admin + tombol 🚫 Ban. Perintah admin: /ban id, /unban id, /stats.
+- Foto diteruskan ke bot admin + tombol 🚫 Ban. Perintah admin: /ban id, /unban id, /warn id pesan (peringatan pribadi), /stats, /setcmd (pasang menu command "/" di bot utama; jalankan sekali). Peringatan juga bisa dikirim langsung dari dashboard → menu ⚠️ Peringatan (atau tombol ⚠️ di daftar Pengguna), lengkap dengan template cepat.
 - Dashboard: buka https://SITEMU.netlify.app (statistik, daftar user, log, ban/unban).

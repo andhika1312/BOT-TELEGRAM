@@ -50,6 +50,7 @@ th{color:var(--mu);font-weight:600;text-align:left;font-size:12px;text-transform
 <button class="nav" data-p="ch" onclick="go('ch')">💬 Log Chat</button>
 <button class="nav" data-p="rp" onclick="go('rp')">🚩 Laporan <b id="nb" class="hide">0</b></button>
 <button class="nav" data-p="bc" onclick="go('bc')">📢 Broadcast</button>
+<button class="nav" data-p="wr" onclick="go('wr')">⚠️ Peringatan</button>
 <button class="nav" data-p="ac" onclick="go('ac')">🕒 Aktivitas</button>
 <div class="sp"></div><button class="nav" onclick="logout()">🚪 Keluar</button></aside>
 <main>
@@ -73,6 +74,13 @@ th{color:var(--mu);font-weight:600;text-align:left;font-size:12px;text-transform
 <div style="margin-top:14px"><span class="mono">Pratinjau di Telegram</span><div class="bub" id="pv" style="margin-top:6px">📢 Pengumuman</div></div></div>
 <h3>Riwayat</h3><div id="bh"></div></section>
 
+<section class="pg hide" id="p-wr"><h1>Peringatan Pribadi</h1><p class="sub">Kirim pesan peringatan langsung ke satu user, tanpa buka Telegram</p>
+<div class="card"><input id="wid" placeholder="ID user (contoh: 123456789)" style="margin-bottom:10px">
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn s o" onclick="tpl(0)">Konten seksual</button><button class="btn s o" onclick="tpl(1)">Kata kasar</button><button class="btn s o" onclick="tpl(2)">Spam / penipuan</button></div>
+<textarea id="wt" rows="5" maxlength="1000" placeholder="Tulis pesan peringatan..." oninput="$('wc').textContent=this.value.length+' / 1000';$('wp').textContent='⚠️ Peringatan dari admin:\n\n'+this.value"></textarea>
+<div class="row" style="margin:12px 0 0"><span class="mono" id="wc">0 / 1000</span><button class="btn" onclick="sendWarn()">⚠️ Kirim peringatan</button></div>
+<div style="margin-top:14px"><span class="mono">Yang diterima user</span><div class="bub" id="wp" style="margin-top:6px">⚠️ Peringatan dari admin:</div></div></div></section>
+
 <section class="pg hide" id="p-ac"><h1>Aktivitas Terbaru</h1><p class="sub">60 kejadian terakhir</p><div class="card" id="al"></div></section>
 </main></div>
 <div id="toast"></div>
@@ -87,7 +95,7 @@ async function login(){const r=await api({action:'login',password:$('pw').value}
 function logout(){localStorage.removeItem('t');T='';$('app').classList.add('hide');$('login').classList.remove('hide')}
 function enter(){$('login').classList.add('hide');$('app').classList.remove('hide');load()}
 function go(p){P=p;document.querySelectorAll('.pg').forEach(e=>e.classList.toggle('hide',e.id!=='p-'+p));document.querySelectorAll('.nav[data-p]').forEach(e=>e.classList.toggle('on',e.dataset.p===p));load()}
-const PG={ov:()=>0,us:()=>users(),ch:()=>chats(),rp:()=>0,bc:()=>bcs(),ac:()=>logs()};
+const PG={ov:()=>0,us:()=>users(),ch:()=>chats(),rp:()=>0,bc:()=>bcs(),wr:()=>0,ac:()=>logs()};
 async function load(){if(!T)return;try{await Promise.all([stats(),reports(),PG[P]()])}catch(e){}}
 async function stats(){const s=await api({action:'stats'});
 const S=[['👥','total','Total user'],['⏳','queue','Antrian'],['💬','humanChat','Chat manusia'],['🤖','botChat','Chat dengan bot'],['❤️','matches','Total match'],['✉️','messages','Pesan'],['📷','photos','Foto'],['🚩','reports','Laporan'],['🚫','banned','Diblokir']];
@@ -98,7 +106,11 @@ $('fleg').textContent=`👍 ${g}   😐 ${o}   👎 ${b}`;
 const nb=$('nb');nb.textContent=s.openReports;nb.classList.toggle('hide',!s.openReports)}
 async function users(){const r=await api({action:'users',q:$('uq').value});
 const SB={queue:'b-y',chat:'b-g',setup:'b-b'},GN={L:'♂ Laki-laki',P:'♀ Perempuan'},SK={L:'Laki-laki',P:'Perempuan',A:'Semua'};
-$('ut').innerHTML=(r.users||[]).map(u=>`<tr><td class="mono">${E(u.id)}</td><td>${E(u.name)}</td><td>${GN[u.gender]||'-'}</td><td>${E(u.age||'-')}</td><td>${SK[u.seek]||'-'}</td><td>${u.banned?'<span class="badge b-r">BANNED</span>':`<span class="badge ${SB[u.state]||''}">${E(u.state)}</span>`}</td><td>${u.msgCount||0} / ${u.photoCount||0}</td><td>${fmt(u.lastActive)}</td><td><button class="btn s o" onclick="goChat('${E(u.id)}')">Chat</button> ${u.banned?`<button class="btn s g" onclick="act('unban','${E(u.id)}')">Unban</button>`:`<button class="btn s r" onclick="act('ban','${E(u.id)}')">Ban</button>`}</td></tr>`).join('')||'<tr><td colspan="9">Tidak ada pengguna</td></tr>'}
+$('ut').innerHTML=(r.users||[]).map(u=>`<tr><td class="mono">${E(u.id)}</td><td>${E(u.name)}</td><td>${GN[u.gender]||'-'}</td><td>${E(u.age||'-')}</td><td>${SK[u.seek]||'-'}</td><td>${u.banned?'<span class="badge b-r">BANNED</span>':`<span class="badge ${SB[u.state]||''}">${E(u.state)}</span>`}</td><td>${u.msgCount||0} / ${u.photoCount||0}</td><td>${fmt(u.lastActive)}</td><td><button class="btn s o" onclick="goChat('${E(u.id)}')">Chat</button> <button class="btn s o" onclick="warnUser('${E(u.id)}')">⚠️ Peringatan</button> ${u.banned?`<button class="btn s g" onclick="act('unban','${E(u.id)}')">Unban</button>`:`<button class="btn s r" onclick="act('ban','${E(u.id)}')">Ban</button>`}</td></tr>`).join('')||'<tr><td colspan="9">Tidak ada pengguna</td></tr>'}
+const TPL=['Percakapanmu mengandung konten seksual yang dilarang. Jika terulang, akunmu akan diblokir.','Kami menerima laporan bahwa kamu berkata kasar / melecehkan. Mohon jaga sikap, pelanggaran berikutnya dapat membuat akunmu diblokir.','Aktivitasmu terdeteksi sebagai spam / penipuan. Hentikan, atau akunmu akan diblokir.'];
+function tpl(i){$('wt').value=TPL[i];$('wt').dispatchEvent(new Event('input'))}
+function warnUser(id){$('wid').value=id;go('wr');$('wt').focus()}
+async function sendWarn(){const id=$('wid').value.trim(),text=$('wt').value.trim();if(!id||!text)return toast('Isi ID user dan pesan dulu');if(!confirm('Kirim peringatan ke user '+id+'?'))return;const r=await api({action:'warn',id,text});toast(r.result==='ok'?'Peringatan terkirim':r.result==='notfound'?'User tidak ditemukan':r.result==='failed'?'Gagal terkirim (user memblokir bot?)':(r.error||'Gagal'));if(r.result==='ok'){$('wt').value='';$('wt').dispatchEvent(new Event('input'))}}
 function goChat(id){$('cu').value=id;go('ch')}
 async function chats(){const r=await api({action:'chats',uid:$('cu').value});
 $('cl').innerHTML=(r.chats||[]).map(c=>`<div class="msg"><span class="t">${fmt(c.t)}</span><span class="x"><span class="mono">${E(c.from)} → ${E(c.to)}</span> ${c.type!=='text'?`<span class="badge b-b">${E(c.type)}</span>`:''}<br>${E(c.text)}</span></div>`).join('')||'<p class="sub" style="margin:0">Belum ada chat</p>'}
@@ -120,7 +132,7 @@ async function bcs(){clearTimeout(BT);const r=await api({action:'broadcasts'}),L
 $('bh').innerHTML=L.map(b=>{const d=b.sent+b.failed,pc=b.total?Math.min(100,Math.round(d/b.total*100)):0,done=b.status==='done';
 return `<div class="card"><div class="row" style="margin-bottom:8px"><span class="mono">${fmt(b.t)}</span><span class="badge ${done?'b-g':'b-y'}">${done?'Selesai':b.status==='sending'?'Mengirim...':'Antre'}</span></div><div style="white-space:pre-wrap;word-break:break-word;margin-bottom:10px">${E(b.text)}</div><div class="bar"><i style="width:${done?100:pc}%;background:linear-gradient(90deg,var(--a),var(--a2))"></i></div><div class="mono" style="margin-top:6px">✅ ${b.sent} terkirim · ❌ ${b.failed} gagal · total ${b.total}</div></div>`}).join('')||'<div class="card"><p class="sub" style="margin:0">Belum ada broadcast</p></div>';
 if(L.some(b=>b.status!=='done'))BT=setTimeout(()=>P==='bc'&&bcs(),3000)}
-async function logs(){const r=await api({action:'logs'});const IC={join:'🆕',match:'❤️',bot_join:'🤖',photo:'📷',ban:'🚫',unban:'✅',report:'🚩'};
+async function logs(){const r=await api({action:'logs'});const IC={join:'🆕',match:'❤️',bot_join:'🤖',photo:'📷',ban:'🚫',unban:'✅',report:'🚩',warn:'⚠️'};
 $('al').innerHTML=(r.logs||[]).map(x=>`<div class="msg"><span class="t">${fmt(x.t)}</span><span class="x">${IC[x.type]||'•'} <b>${E(x.type)}</b> <span class="mono">${E(x.uid)} ${E(x.extra)}</span></span></div>`).join('')||'<p class="sub" style="margin:0">Belum ada aktivitas</p>'}
 async function act(a,id){if(confirm((a==='ban'?'Blokir':'Buka blokir')+' user '+id+'?')){await api({action:a,id});toast(a==='ban'?'User diblokir':'Blokir dibuka');load()}}
 if(T)enter();setInterval(load,10000);

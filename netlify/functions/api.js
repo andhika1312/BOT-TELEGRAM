@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { db, banUser, unbanUser, purgeChats } = require('./lib');
+const { db, banUser, unbanUser, purgeChats, warnUser } = require('./lib');
 const sig = (p) => crypto.createHmac('sha256', process.env.ADMIN_PASSWORD).update(p).digest('hex');
 const eq = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 const res = (code, obj) => ({ statusCode: code, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
@@ -49,6 +49,11 @@ exports.handler = async (event) => {
       return res(200, { id: doc.id });
     }
     if (b.action === 'broadcasts') { const q = await db.collection('broadcasts').orderBy('t', 'desc').limit(10).get(); return res(200, { broadcasts: q.docs.map((d) => ({ id: d.id, ...d.data() })) }); }
+    if (b.action === 'warn') {
+      const text = String(b.text || '').trim();
+      if (!text || text.length > 1000) return res(400, { error: 'Pesan kosong atau lebih dari 1000 karakter' });
+      return res(200, { result: await warnUser(b.id, text, 'dashboard') });
+    }
     if (b.action === 'ban') return res(200, { ok: await banUser(b.id, 'dashboard') });
     if (b.action === 'unban') return res(200, { ok: await unbanUser(b.id) });
   } catch (e) { console.error(e); return res(500, { error: 'Server error' }); }

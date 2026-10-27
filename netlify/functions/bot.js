@@ -2,7 +2,7 @@ const { db, bot, abot, send, ref, log, stat, FV } = require('./lib');
 const S = { L: 'Laki-laki', P: 'Perempuan', A: 'Semua' };
 const MENU = { keyboard: [[{ text: '🔍 Cari' }, { text: '⏭ Skip' }], [{ text: '➡️ Next' }, { text: '⛔ Stop' }], [{ text: '👤 Profil' }]], resize_keyboard: true };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const ok = (a, b) => Math.abs((a.age || 0) - (b.age || 0)) <= 10; // random: semua gender boleh, selisih umur maks. 10 tahun
+const ok = () => true; // random total: semua gender (cewek-cewek, cowok-cowok, campur) dan umur berapa pun boleh
 const RULES = '👋 Selamat datang di chat anonim!\n\nAturan:\n• Khusus 18 tahun ke atas\n• Dilarang konten seksual eksplisit, pelecehan, penipuan, SARA\n• Percakapan dapat ditinjau admin demi keamanan (maks. 30 hari)\n• Jika belum ada pasangan yang cocok, kamu bisa dihubungkan dengan teman ngobrol otomatis (bot)\n• Pelanggar akan diblokir\n\nIsi profil dulu ya. Gendermu?';
 const kb = (rows) => ({ inline_keyboard: rows });
 const MENU_TEXTS = ['🔍 Cari', '⏭ Skip', '➡️ Next', '⛔ Stop', '👤 Profil'];
