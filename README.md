@@ -26,7 +26,7 @@ curl "https://api.telegram.org/bot<ADMIN_BOT_TOKEN>/setWebhook?url=https://SITEM
 Deploy dulu, kirim `/id` ke bot admin → salin angkanya → isi ADMIN_CHAT_ID → redeploy.
 
 ## Log chat
-Semua chat dicatat ke Firestore (koleksi `chats`), dibaca lewat dashboard → Log Chat. Otomatis dihapus setelah 30 hari (ubah dengan env `CHAT_RETENTION_DAYS`). User diberi tahu di aturan /start.
+Semua chat dicatat ke Firestore (koleksi `chats`), dibaca lewat dashboard → Log Chat. Otomatis dihapus setelah 30 hari (ubah dengan env `CHAT_RETENTION_DAYS`). User diberi tahu singkat di aturan /start.
 
 ## Laporan & auto-skip bot
 Setelah chat berakhir (skip/stop/di-skip) user melihat penilaian 👍😐👎 + tombol 🚩 Laporkan (pilih Seksual/Kasar/Spam/Lainnya, lalu jelaskan). Laporan + 30 pesan terakhir masuk dashboard dan bot admin. Bot pengganti dilewati otomatis ±10 detik lewat `botexpire-background` (variabel `URL` disediakan Netlify otomatis).
@@ -35,7 +35,7 @@ Setelah chat berakhir (skip/stop/di-skip) user melihat penilaian 👍😐👎 + 
 Dashboard → Broadcast: tulis pengumuman, kirim ke semua user (kecuali yang diblokir). Berjalan di background (±25 pesan/detik), progres tampil di dashboard. User yang memblokir bot dihitung 'gagal'.
 
 ## Fitur
-- User: /start (gender, umur 18+, minat), /search, Skip, Next, Stop.
-- Tidak ada pasangan cocok dalam ±6 detik → masuk BOT (diberi label jelas).
+- User: /start (gender, umur 18+, minat), /search, Skip, Next, Stop, /profil (ubah gender, umur, minat tanpa mengulang dari awal).
+- Tidak ada pasangan cocok dalam ±6 detik → tampil "Pasangan ditemukan" (teman ngobrol otomatis), dilewati otomatis ±10 detik.
 - Foto diteruskan ke bot admin + tombol 🚫 Ban. Perintah admin: /ban id, /unban id, /stats.
 - Dashboard: buka https://SITEMU.netlify.app (statistik, daftar user, log, ban/unban).

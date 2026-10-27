@@ -1,10 +1,14 @@
 const { db, bot, abot, send, ref, log, stat, FV } = require('./lib');
 const S = { L: 'Laki-laki', P: 'Perempuan', A: 'Semua' };
-const MENU = { keyboard: [[{ text: '🔍 Cari' }, { text: '⏭ Skip' }], [{ text: '➡️ Next' }, { text: '⛔ Stop' }]], resize_keyboard: true };
+const MENU = { keyboard: [[{ text: '🔍 Cari' }, { text: '⏭ Skip' }], [{ text: '➡️ Next' }, { text: '⛔ Stop' }], [{ text: '👤 Profil' }]], resize_keyboard: true };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ok = (a, b) => (a.seek === 'A' || a.seek === b.gender) && (b.seek === 'A' || b.seek === a.gender);
-const RULES = '👋 Selamat datang di chat anonim!\n\nAturan:\n• Khusus 18 tahun ke atas\n• Dilarang konten seksual eksplisit, pelecehan, penipuan, SARA\n• Percakapan (teks & foto) dicatat dan dapat ditinjau admin demi keamanan, disimpan maksimal 30 hari\n• Jika tidak ada pasangan yang cocok, kamu akan dihubungkan dengan BOT (diberi label jelas)\n• Pelanggar akan diblokir\n\nIsi profil dulu ya. Gendermu?';
+const RULES = '👋 Selamat datang di chat anonim!\n\nAturan:\n• Khusus 18 tahun ke atas\n• Dilarang konten seksual eksplisit, pelecehan, penipuan, SARA\n• Percakapan dapat ditinjau admin demi keamanan (maks. 30 hari)\n• Jika belum ada pasangan yang cocok, kamu bisa dihubungkan dengan teman ngobrol otomatis (bot)\n• Pelanggar akan diblokir\n\nIsi profil dulu ya. Gendermu?';
 const kb = (rows) => ({ inline_keyboard: rows });
+const MENU_TEXTS = ['🔍 Cari', '⏭ Skip', '➡️ Next', '⛔ Stop', '👤 Profil'];
+const profileText = (u) => `👤 Profilmu\n\nGender: ${S[u.gender] || '-'}\nUmur: ${u.age || '-'}\nMencari: ${S[u.seek] || '-'}\n\nMau ubah apa?`;
+const profileKb = kb([[{ text: '👤 Gender', callback_data: 'pf:g' }, { text: '🎂 Umur', callback_data: 'pf:a' }], [{ text: '💞 Minat (cari siapa)', callback_data: 'pf:s' }]]);
+const showProfile = (uid, u) => send(uid, profileText(u), { reply_markup: profileKb });
 
 exports.handler = async (event) => {
   if (event.headers['x-telegram-bot-api-secret-token'] !== process.env.WEBHOOK_SECRET) return { statusCode: 401 };
@@ -28,6 +32,17 @@ async function handle(up) {
   await ref(uid).update({ lastActive: Date.now() });
 
   if (u.pendingReport && ((t && !t.startsWith('/')) || t === '/lewati')) return submitReport(uid, u, t === '/lewati' ? '' : t);
+  if (u.editing === 'age') {
+    if (t === '/batal') { await ref(uid).update({ editing: FV.delete() }); return send(uid, 'Dibatalkan.', { reply_markup: MENU }); }
+    if (/^\d{1,2}$/.test(t)) {
+      const age = parseInt(t, 10);
+      if (age < 18) return send(uid, '❌ Maaf, bot ini hanya untuk usia 18 tahun ke atas. Kirim umur lain atau /batal.');
+      await ref(uid).update({ age, editing: FV.delete() });
+      return send(uid, `✅ Umur diubah menjadi ${age}.`, { reply_markup: MENU });
+    }
+    if (t.startsWith('/') || MENU_TEXTS.includes(t)) await ref(uid).update({ editing: FV.delete() });
+    else return send(uid, 'Kirim umurmu dalam angka, contoh: 21 (atau /batal).');
+  }
   if (t === '/start' || t === '/ubah') { if (u.partner) await endChat(uid, u); await ref(uid).update({ state: 'setup', step: 'gender', partner: null }); return send(uid, RULES, { reply_markup: kb([[{ text: '👨 Laki-laki', callback_data: 'g:L' }, { text: '👩 Perempuan', callback_data: 'g:P' }]]) }); }
   if (u.state === 'setup') {
     if (u.step === 'age') {
@@ -39,6 +54,7 @@ async function handle(up) {
     }
     return send(uid, 'Selesaikan profil dulu dengan memilih tombol di atas, atau ketik /start.');
   }
+  if (t === '/profil' || t === '👤 Profil') return showProfile(uid, u);
   if (t === '/search' || t === '🔍 Cari') return u.state === 'chat' ? send(uid, 'Kamu sedang chat. Pakai Next/Skip/Stop.') : search(uid);
   if (['/next', '➡️ Next', '/skip', '⏭ Skip'].includes(t)) return search(uid);
   if (t === '/stop' || t === '⛔ Stop') return stop(uid, u);
@@ -57,9 +73,18 @@ async function cb(q) {
   if (k === 'fb') { await db.collection('feedback').add({ t: Date.now(), from: String(uid), about: p[2], rating: v }); await stat({ g: 'fbGood', o: 'fbOk', b: 'fbBad' }[v] || 'fbOk'); return edit('Terima kasih atas penilaianmu 🙏'); }
   if (k === 'rp') return edit('🚩 Kenapa kamu melaporkan pasangan tadi? Pilih alasan:', kb([[{ text: '🔞 Seksual', callback_data: 'rc:sx:' + v }], [{ text: '😡 Kasar / pelecehan', callback_data: 'rc:ha:' + v }], [{ text: '💸 Penipuan / spam', callback_data: 'rc:sp:' + v }], [{ text: '✍️ Lainnya', callback_data: 'rc:ot:' + v }]]));
   if (k === 'rc') { await ref(uid).update({ pendingReport: { target: p[2], cat: v } }); return edit('✍️ Jelaskan singkat apa yang terjadi (ketik pesanmu), atau kirim /lewati untuk tanpa penjelasan.'); }
+  if (k === 'pf' || k === 'pg' || k === 'ps') {
+    if (u.state === 'setup') return;
+    if (k === 'pf' && v === 'g') return edit('Pilih gendermu:', kb([[{ text: '👨 Laki-laki', callback_data: 'pg:L' }, { text: '👩 Perempuan', callback_data: 'pg:P' }]]));
+    if (k === 'pf' && v === 's') return edit('Tertarik dengan gender apa?', kb([[{ text: 'Laki-laki', callback_data: 'ps:L' }, { text: 'Perempuan', callback_data: 'ps:P' }, { text: 'Semua', callback_data: 'ps:A' }]]));
+    if (k === 'pf' && v === 'a') { await ref(uid).update({ editing: 'age' }); return edit('🎂 Kirim umur barumu (angka, minimal 18), atau /batal.'); }
+    if (k === 'pg' && ['L', 'P'].includes(v)) { await ref(uid).update({ gender: v }); return edit(profileText({ ...u, gender: v }), profileKb); }
+    if (k === 'ps' && ['L', 'P', 'A'].includes(v)) { await ref(uid).update({ seek: v }); return edit(profileText({ ...u, seek: v }), profileKb); }
+    return;
+  }
   if (u.state !== 'setup') return;
   if (k === 'g' && u.step === 'gender') { await ref(uid).update({ gender: v, step: 'age' }); return send(uid, 'Berapa umurmu? (angka, minimal 18)'); }
-  if (k === 's' && u.step === 'seek') { await ref(uid).update({ seek: v, state: 'idle', step: 'done' }); return send(uid, '✅ Profil tersimpan! Ketik /search atau tekan 🔍 Cari.', { reply_markup: MENU }); }
+  if (k === 's' && u.step === 'seek') { await ref(uid).update({ seek: v, state: 'idle', step: 'done' }); return send(uid, '✅ Profil tersimpan! Ketik /search atau tekan 🔍 Cari. Ubah profil kapan saja lewat /profil.', { reply_markup: MENU }); }
 }
 
 async function endChat(uid, u) {
@@ -73,7 +98,6 @@ async function endChat(uid, u) {
 
 async function search(uid) {
   const u = (await ref(uid).get()).data();
-  if (!u.ack2) { await send(uid, 'ℹ️ Pemberitahuan: percakapan di bot ini dicatat dan dapat ditinjau admin demi keamanan (disimpan maksimal 30 hari). Dengan lanjut memakai bot, kamu menyetujuinya.'); await ref(uid).update({ ack2: true }); }
   await endChat(uid, u);
   await ref(uid).update({ state: 'queue', partner: null, queuedAt: Date.now(), hist: [] });
   await send(uid, '🔍 Mencari pasangan...', { reply_markup: MENU });
@@ -86,7 +110,7 @@ async function search(uid) {
     t.update(ref(uid), { state: 'chat', partner: 'BOT', hist: [], botSince: since }); return true;
   });
   if (joined) {
-    await send(uid, '🤖 Belum ada yang cocok online. Kamu terhubung dengan BOT teman ngobrol (bukan manusia) dan akan dilewati otomatis sekitar 10 detik lagi.', { reply_markup: kb([[{ text: '➡️ Next', callback_data: 'nx:BOT' }, { text: '⛔ Stop', callback_data: 'xx:BOT' }]]) });
+    await send(uid, '✅ Pasangan ditemukan!\nSapa dia 👋', { reply_markup: kb([[{ text: '➡️ Next', callback_data: 'nx:BOT' }, { text: '⛔ Stop', callback_data: 'xx:BOT' }]]) });
     await log('bot_join', uid); await stat('botChats');
     await fetch(process.env.URL + '/.netlify/functions/botexpire-background', { method: 'POST', headers: { 'x-secret': process.env.WEBHOOK_SECRET }, body: JSON.stringify({ uid, since }) }).catch(console.error);
   }
@@ -124,7 +148,7 @@ async function relay(uid, u, m) {
   if (photo) { await stat('photos'); await log('photo', uid, u.partner); await toAdmin(m, uid, u); }
   if (u.partner === 'BOT') {
     if (m.text) return botReply(uid, u, m.text);
-    return send(uid, '🤖 Bot hanya bisa membaca teks.');
+    return send(uid, 'Pesan ini tidak bisa ditampilkan. Coba kirim teks ya.');
   }
   await bot('copyMessage', { chat_id: u.partner, from_chat_id: uid, message_id: m.message_id });
 }
@@ -155,7 +179,7 @@ async function botReply(uid, u, text) {
   if (!reply) reply = ['Hehe iya 😄 cerita lebih banyak dong', 'Wah menarik, lanjut!', 'Menurutmu gimana?', 'Lagi ngapain hari ini?'][Math.floor(Math.random() * 4)];
   hist.push({ role: 'assistant', content: reply });
   await ref(uid).update({ hist });
-  await send(uid, '🤖 ' + reply);
+  await send(uid, reply);
   await db.collection('chats').add({ t: Date.now(), from: 'BOT', to: String(uid), type: 'text', text: reply });
 }
 

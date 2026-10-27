@@ -14,6 +14,6 @@ exports.handler = async (event) => {
   const rounds = ((await ref(uid).get()).data().botRounds || 0) + 1;
   if (rounds >= 3) { await ref(uid).update({ botRounds: 0 }); return send(uid, 'Belum ada orang yang cocok online saat ini. Coba lagi sebentar lagi ya 🙏 /search', { reply_markup: MENU }); }
   await ref(uid).update({ botRounds: rounds });
-  await send(uid, '⏭ Bot dilewati otomatis. Mencari pasangan lain...');
+  await send(uid, '⏭ Chat berakhir. Mencari pasangan lain...');
   await search(uid);
 };
